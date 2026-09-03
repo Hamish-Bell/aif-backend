@@ -10,7 +10,7 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "content-type"]
 }));
 
-app.options("*", cors());
+app.options("/send", cors());
 
 
 app.use(express.json());
