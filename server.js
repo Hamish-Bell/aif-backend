@@ -3,7 +3,13 @@ const nodemailer = require("nodemailer");
 const cors = require("cors");
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+    origin: "https://aif-website.netlify.app",
+    methods: ["POST", "GET"],
+    allowedHeaders: ["Content-Type"]
+}));
+
 app.use(express.json());
 
 app.post("/send", async (req, res) => {
@@ -34,4 +40,3 @@ app.post("/send", async (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
