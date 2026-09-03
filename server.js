@@ -12,7 +12,6 @@ app.use(cors({
 
 app.options("/send", cors());
 
-
 app.use(express.json());
 
 app.post("/send", async (req, res) => {
@@ -20,10 +19,15 @@ app.post("/send", async (req, res) => {
 
     try {
         const transporter = nodemailer.createTransport({
-            service: "Outlook",
+            host: "smtp.office365.com",
+            port: 587,
+            secure: false,
             auth: {
                 user: process.env.OUTLOOK_EMAIL,
                 pass: process.env.OUTLOOK_PASSWORD
+            },
+            tls: {
+                ciphers: "SSLv3"
             }
         });
 
