@@ -7,10 +7,11 @@ const app = express();
 app.use(cors({
     origin: "https://aif-website.netlify.app",
     methods: ["POST", "GET"],
-    allowedHeaders: ["Content-Type"]
+    allowedHeaders: ["Content-Type", "content-type"]
 }));
 
 app.options("*", cors());
+
 
 app.use(express.json());
 
