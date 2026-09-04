@@ -1,3 +1,4 @@
+
 const express = require("express");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
@@ -6,16 +7,28 @@ const app = express();
 
 app.use(cors({
     origin: "https://aif-website.netlify.app",
-    methods: ["POST", "GET"],
-    allowedHeaders: ["Content-Type", "content-type"]
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"]
 }));
-
-app.options("/send", cors());
 
 app.use(express.json());
 
+app.get("/", (req, res) => {
+    res.send("Backend is running!");
+});
+
 app.post("/send", async (req, res) => {
+    console.log("POST /send received");
+    console.log("Request body:", req.body);
+
     const { name, email, message } = req.body;
+
+    if (!name || !email || !message) {
+        return res.status(400).json({
+            success: false,
+            error: "Please provide a name, email and message."
+        });
+    }
 
     try {
         const transporter = nodemailer.createTransport({
@@ -27,23 +40,47 @@ app.post("/send", async (req, res) => {
                 pass: process.env.OUTLOOK_PASSWORD
             },
             tls: {
-                ciphers: "SSLv3"
+                minVersion: "TLSv1.2"
             }
         });
 
+        await transporter.verify();
+
+        console.log("SMTP connection successful");
+
         await transporter.sendMail({
-            from: email,
+            from: process.env.OUTLOOK_EMAIL,
             to: process.env.OUTLOOK_EMAIL,
+            replyTo: email,
             subject: `New message from ${name}`,
-            text: message
+            text: `Name: ${name}
+
+Email: ${email}
+
+Message:
+${message}`
         });
 
-        res.status(200).json({ success: true });
+        console.log("Email sent successfully");
+
+        res.status(200).json({
+            success: true,
+            message: "Email sent successfully."
+        });
+
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error });
+        console.error("Email error:", error);
+
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
