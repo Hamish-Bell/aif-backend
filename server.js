@@ -1,8 +1,9 @@
-
 const express = require("express");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
 const dns = require("dns");
+
+dns.setDefaultResultOrder("ipv4first");
 
 const app = express();
 
@@ -32,28 +33,11 @@ app.post("/send", async (req, res) => {
     }
 
     try {
-        console.log("Resolving Outlook SMTP server...");
-
-        const smtpAddress = await new Promise((resolve, reject) => {
-            dns.lookup(
-                "smtp.office365.com",
-                { family: 4 },
-                (error, address) => {
-                    if (error) {
-                        reject(error);
-                    } else {
-                        resolve(address);
-                    }
-                }
-            );
-        });
-
-        console.log("Using IPv4 address:", smtpAddress);
-
         const transporter = nodemailer.createTransport({
-            host: smtpAddress,
+            host: "smtp.office365.com",
             port: 587,
             secure: false,
+            family: 4,
 
             auth: {
                 user: process.env.OUTLOOK_EMAIL,
@@ -61,8 +45,7 @@ app.post("/send", async (req, res) => {
             },
 
             tls: {
-                minVersion: "TLSv1.2",
-                servername: "smtp.office365.com"
+                minVersion: "TLSv1.2"
             },
 
             connectionTimeout: 10000,
