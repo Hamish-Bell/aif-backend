@@ -1,4 +1,3 @@
-
 const express = require("express");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
@@ -26,29 +25,35 @@ app.post("/send", async (req, res) => {
     if (!name || !email || !message) {
         return res.status(400).json({
             success: false,
-            error: "Please provide a name, email and message."
+            error: "Missing name, email, or message"
         });
     }
 
     try {
+        console.log("Creating SMTP transporter...");
+
         const transporter = nodemailer.createTransport({
             host: "smtp.office365.com",
             port: 587,
             secure: false,
+
             auth: {
                 user: process.env.OUTLOOK_EMAIL,
                 pass: process.env.OUTLOOK_PASSWORD
             },
+
             tls: {
                 minVersion: "TLSv1.2"
-            }
+            },
+
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000
         });
 
-        await transporter.verify();
+        console.log("Sending email...");
 
-        console.log("SMTP connection successful");
-
-        await transporter.sendMail({
+        const info = await transporter.sendMail({
             from: process.env.OUTLOOK_EMAIL,
             to: process.env.OUTLOOK_EMAIL,
             replyTo: email,
@@ -61,15 +66,16 @@ Message:
 ${message}`
         });
 
-        console.log("Email sent successfully");
+        console.log("Email sent:", info.messageId);
 
         res.status(200).json({
             success: true,
-            message: "Email sent successfully."
+            message: "Email sent successfully"
         });
 
     } catch (error) {
-        console.error("Email error:", error);
+        console.error("EMAIL ERROR:");
+        console.error(error);
 
         res.status(500).json({
             success: false,
@@ -83,4 +89,3 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
 });
-
