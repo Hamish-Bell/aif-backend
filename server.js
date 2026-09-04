@@ -2,6 +2,7 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
+const dns = require("dns");
 
 const app = express();
 
@@ -31,12 +32,28 @@ app.post("/send", async (req, res) => {
     }
 
     try {
+        console.log("Resolving Outlook SMTP server...");
+
+        const smtpAddress = await new Promise((resolve, reject) => {
+            dns.lookup(
+                "smtp.office365.com",
+                { family: 4 },
+                (error, address) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(address);
+                    }
+                }
+            );
+        });
+
+        console.log("Using IPv4 address:", smtpAddress);
+
         const transporter = nodemailer.createTransport({
-            host: "smtp.office365.com",
+            host: smtpAddress,
             port: 587,
             secure: false,
-
-            family: 4,
 
             auth: {
                 user: process.env.OUTLOOK_EMAIL,
@@ -44,7 +61,8 @@ app.post("/send", async (req, res) => {
             },
 
             tls: {
-                minVersion: "TLSv1.2"
+                minVersion: "TLSv1.2",
+                servername: "smtp.office365.com"
             },
 
             connectionTimeout: 10000,
@@ -52,15 +70,13 @@ app.post("/send", async (req, res) => {
             socketTimeout: 15000
         });
 
-
-
         console.log("Testing SMTP connection...");
 
-    await transporter.verify();
+        await transporter.verify();
 
-    console.log("SMTP connection successful!");
+        console.log("SMTP connection successful!");
 
-    console.log("Sending email...");
+        console.log("Sending email...");
 
         await transporter.sendMail({
             from: process.env.OUTLOOK_EMAIL,
@@ -97,4 +113,3 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
 });
-
